@@ -1,0 +1,35 @@
+version: "3"
+services:
+  wireguard:
+    image: lscr.io/linuxserver/wireguard
+    restart: always
+    cap_add:
+      - NET_ADMIN
+    sysctls:
+      - net.ipv4.conf.all.src_valid_mark=1
+    environment:
+      - PUID=1000
+      - PGID=1000
+      # Change this to your local CIDR
+      - HOME_CIDR=192.168.1.0/24
+    volumes:
+      - ./wg.conf:/config/wg0.conf
+    ports:
+      # We open the transmission web UI port here as we're going to use this
+      # containers network for that container.
+      - 9091:9091
+  transmission:
+    image: linuxserver/transmission
+    restart: always
+    network_mode: "service:wireguard"
+    depends_on:
+      - wireguard
+    environment:
+      PUID: 1000
+      PGID: 1000
+      TRANSMISSION_WEB_HOME: /transmission-web-control/
+      # Change this to host(s) you want to access from
+      WHITELIST: 192.168.1.10
+    volumes:
+      - ./config:/config
+      - /changeme/to/download/pathh:/downloads
